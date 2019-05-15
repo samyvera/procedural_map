@@ -1,84 +1,41 @@
-class CanvasDisplay {
-	constructor (parent, world) {
+class Canvas {
+    constructor(parent, world) {
         this.canvas = document.createElement('canvas');
-        this.gridLength = world.size;
-        this.scale = 512 / world.size;
-		this.canvas.width = this.scale * this.gridLength;
-		this.canvas.height = this.scale * this.gridLength;
-		parent.appendChild(this.canvas);
-		this.cx = this.canvas.getContext("2d");
-		this.cx.imageSmoothingEnabled = false;
+        this.cx = this.canvas.getContext("2d", { alpha: false });
+        this.zoom = 4;
+        this.draw = () => {
+            this.cx.fillStyle = '#033';
+            this.cx.strokeStyle = "#0f0";
+            this.cx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            for (let x = 0; x < this.world.size; x++)
+                for (let y = 0; y < this.world.size; y++)
+                    this.cx.strokeRect(x * 8 + 0.5, y * 8 + 0.5, 7, 7);
+            this.cx.fillStyle = "#888";
+            this.cx.strokeStyle = "#fff";
+            this.world.rooms.forEach((room, pos) => {
+                var posNum = pos.split(',', 2);
+                var posX = (+posNum[0]) * 8 + this.world.size / 2 * 8;
+                var posY = (+posNum[1]) * 8 + this.world.size / 2 * 8;
+                this.cx.fillRect(posX, posY, 8, 8);
+                this.cx.strokeRect(posX + 0.5, posY + 0.5, 7, 7);
+                room.forEach(door => {
+                    if (door === "top")
+                        this.cx.fillRect(posX + 3, posY + 7, 2, 1);
+                    if (door === "right")
+                        this.cx.fillRect(posX + 7, posY + 3, 1, 2);
+                    if (door === "bottom")
+                        this.cx.fillRect(posX + 3, posY, 2, 1);
+                    if (door === "left")
+                        this.cx.fillRect(posX, posY + 3, 1, 2);
+                });
+            });
+        };
+        this.canvas.width = world.size * 8 * this.zoom;
+        this.canvas.height = world.size * 8 * this.zoom;
+        parent.appendChild(this.canvas);
+        this.cx.scale(this.zoom, -this.zoom);
+        this.cx.translate(0, -world.size * 8);
+        this.cx.imageSmoothingEnabled = false;
         this.world = world;
-
-        this.cx.translate(0, this.canvas.height/2);
-        this.cx.scale(1, -1);
-        this.cx.translate(0, -this.canvas.height/2);
-	}
-}
-
-CanvasDisplay.prototype.draw = function() {
-    this.drawGrid();
-    this.drawRooms();
-};
-
-CanvasDisplay.prototype.drawGrid = function() {
-    this.cx.fillStyle = '#033';
-    this.cx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    for (let x = 0; x < this.canvas.width; x += this.scale) {
-        for (let y = 0; y < this.canvas.height; y += this.scale) {
-            this.cx.strokeStyle = "lime";
-            this.cx.strokeRect(x, y, this.scale, this.scale);
-        }
     }
-};
-
-CanvasDisplay.prototype.drawRooms = function() {
-    this.world.grid.forEach(cell => {
-        var posX = cell.pos.x*this.scale + this.canvas.width/2;
-        var posY = cell.pos.y*this.scale + this.canvas.width/2;
-
-        var color = "grey";
-        // if (cell.type === 0) { color = "red"; }
-        // else if (cell.type === 1) { color = "blue"; }
-        // else { color = "grey"; }
-
-        //floor
-        if (cell.top || cell.right || cell.bottom || cell.left) {
-            this.cx.fillStyle = color;
-            this.cx.fillRect(posX, posY, this.scale, this.scale);
-        }
-        //walls && doors
-        if (cell.top) {
-            this.cx.fillStyle = "#fff";
-            this.cx.fillRect(posX, posY + 0.875*this.scale, this.scale, this.scale/8);
-            if (cell.top instanceof Door) {
-                this.cx.fillStyle = color;
-                this.cx.fillRect(posX + 0.375*this.scale, posY + 0.875*this.scale, this.scale/4, this.scale/8);
-            }
-        }
-        if (cell.right) {
-            this.cx.fillStyle = "#fff";
-            this.cx.fillRect(posX + 0.875*this.scale, posY, this.scale/8, this.scale);
-            if (cell.right instanceof Door) {
-                this.cx.fillStyle = color;
-                this.cx.fillRect(posX + 0.875*this.scale, posY + 0.375*this.scale, this.scale/8, this.scale/4);
-            }
-        }
-        if (cell.bottom) {
-            this.cx.fillStyle = "#fff";
-            this.cx.fillRect(posX, posY, this.scale, this.scale/8);
-            if (cell.bottom instanceof Door) {
-                this.cx.fillStyle = color;
-                this.cx.fillRect(posX + 0.375*this.scale, posY, this.scale/4, this.scale/8);
-            }
-        }
-        if (cell.left) {
-            this.cx.fillStyle = "#fff";
-            this.cx.fillRect(posX, posY, this.scale/8, this.scale);
-            if (cell.left instanceof Door) {
-                this.cx.fillStyle = color;
-                this.cx.fillRect(posX, posY + 0.375*this.scale, this.scale/8, this.scale/4);
-            }
-        }
-    });
-};
+}
